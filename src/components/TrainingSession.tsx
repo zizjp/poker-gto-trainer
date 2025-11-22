@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import type { TrainingSettings, TrainingQuestion, FrequencyTracker } from '../types';
-import { swipeDirectionToAction, getActionLabel } from '../utils/training';
+import { swipeDirectionToAction } from '../utils/training';
 import { handToCards, getRankDisplay } from '../utils/cards';
 
 interface TrainingSessionProps {
