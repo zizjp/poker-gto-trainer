@@ -237,13 +237,12 @@ export function getActionLabel(action: HandActionType): string {
  * @returns アクションタイプ
  */
 export function swipeDirectionToAction(
-  direction: 'up' | 'down' | 'left' | 'right'
+  direction: 'up' | 'left' | 'right'
 ): HandActionType {
   const mapping: Record<string, HandActionType> = {
-    up: 'raise',
-    down: 'fold',
+    up: 'fold',
     left: 'call',
-    right: 'allin',
+    right: 'raise',
   };
   return mapping[direction];
 }
