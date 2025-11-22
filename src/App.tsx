@@ -282,30 +282,33 @@ function App() {
         <Statistics onClose={handleCloseStatistics} />
       )}
 
-      {/* 学習セッション画面 */}
-      {trainingPhase === 'session' && trainingSettings && trainingQuestions.length > 0 && (
-        <TrainingSession
-          settings={trainingSettings}
-          questions={trainingQuestions}
-          onComplete={handleTrainingComplete}
-          onCancel={handleTrainingCancel}
-          frequencyTracker={frequencyTracker || undefined}
-        />
-      )}
+      {/* 統計画面が表示されていない場合のみ、以下のコンテンツを表示 */}
+      {!showStatistics && (
+        <>
+          {/* 学習セッション画面 */}
+          {trainingPhase === 'session' && trainingSettings && trainingQuestions.length > 0 && (
+            <TrainingSession
+              settings={trainingSettings}
+              questions={trainingQuestions}
+              onComplete={handleTrainingComplete}
+              onCancel={handleTrainingCancel}
+              frequencyTracker={frequencyTracker || undefined}
+            />
+          )}
 
-      {/* 学習結果画面 */}
-      {trainingPhase === 'result' && trainingResult && (
-        <TrainingResultComponent
-          result={trainingResult}
-          onRestart={handleTrainingRestart}
-          onBackToHome={handleBackToHome}
-        />
-      )}
+          {/* 学習結果画面 */}
+          {trainingPhase === 'result' && trainingResult && (
+            <TrainingResultComponent
+              result={trainingResult}
+              onRestart={handleTrainingRestart}
+              onBackToHome={handleBackToHome}
+            />
+          )}
 
-      {/* ホーム画面またはエディター画面 */}
-      {trainingPhase === 'setup' && !showEditor ? (
-        // ホーム画面
-        <div className="home-screen max-w-screen-lg mx-auto p-6">
+          {/* ホーム画面またはエディター画面 */}
+          {trainingPhase === 'setup' && !showEditor && (
+            // ホーム画面
+            <div className="home-screen max-w-screen-lg mx-auto p-6">
           <header className="mb-8">
             <h1 className="text-4xl font-bold text-gray-900">Poker GTO Trainer</h1>
             <p className="text-gray-600 mt-2">
@@ -313,140 +316,142 @@ function App() {
             </p>
           </header>
 
-          {/* モード切り替えタブ */}
-          <div className="mode-tabs flex gap-2 mb-6">
-            <button
-              onClick={() => setAppMode('debug')}
-              className={`
-                flex-1 py-3 font-semibold rounded-lg transition-all shadow
-                ${appMode === 'debug'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-                }
-              `}
-            >
-              デバッグモード
-            </button>
-            <button
-              onClick={() => setAppMode('training')}
-              className={`
-                flex-1 py-3 font-semibold rounded-lg transition-all shadow
-                ${appMode === 'training'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-                }
-              `}
-            >
-              学習モード
-            </button>
-            <button
-              onClick={handleShowStatistics}
-              className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg transition-all shadow hover:bg-purple-700"
-            >
-              統計を見る
-            </button>
-          </div>
-
-          {/* デバッグモードのコンテンツ */}
-          {appMode === 'debug' && (
-            <>
-              {/* 新規作成ボタン */}
-              <button
-                onClick={handleCreateNewRange}
-                className="w-full py-4 mb-4 bg-blue-600 text-white font-semibold text-lg rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
-              >
-                + 新規レンジを作成
-              </button>
-
-              {/* インポート・エクスポートボタン */}
-              <div className="flex gap-3 mb-6">
+              {/* モード切り替えタブ */}
+              <div className="mode-tabs flex gap-2 mb-6">
                 <button
-                  onClick={handleImport}
-                  className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow"
-                >
-                  インポート
-                </button>
-                <button
-                  onClick={handleExport}
-                  disabled={savedRanges.length === 0}
+                  onClick={() => setAppMode('debug')}
                   className={`
-                    flex-1 py-3 font-semibold rounded-lg transition-colors shadow
-                    ${savedRanges.length > 0
-                      ? 'bg-gray-600 text-white hover:bg-gray-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    flex-1 py-3 font-semibold rounded-lg transition-all shadow
+                    ${appMode === 'debug'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
                     }
                   `}
                 >
-                  エクスポート
+                  デバッグモード
+                </button>
+                <button
+                  onClick={() => setAppMode('training')}
+                  className={`
+                    flex-1 py-3 font-semibold rounded-lg transition-all shadow
+                    ${appMode === 'training'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-100'
+                    }
+                  `}
+                >
+                  学習モード
+                </button>
+                <button
+                  onClick={handleShowStatistics}
+                  className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg transition-all shadow hover:bg-purple-700"
+                >
+                  統計を見る
                 </button>
               </div>
 
-              {/* 保存済みレンジ一覧 */}
-              <div className="saved-ranges">
-                <h2 className="text-2xl font-bold mb-4">保存済みレンジ</h2>
-                
-                {savedRanges.length === 0 ? (
-                  <div className="empty-state text-center py-12 text-gray-500">
-                    <p>まだレンジが作成されていません</p>
-                    <p className="text-sm mt-2">「新規レンジを作成」から始めましょう</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {savedRanges.map(range => (
-                      <SwipeableRangeCard
-                        key={range.id}
-                        range={range}
-                        onEdit={() => handleEditRange(range)}
-                        onDelete={() => handleDeleteRange(range.id)}
-                        onDuplicate={() => handleDuplicateRange(range)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+              {/* デバッグモードのコンテンツ */}
+              {appMode === 'debug' && (
+                <>
+                  {/* 新規作成ボタン */}
+                  <button
+                    onClick={handleCreateNewRange}
+                    className="w-full py-4 mb-4 bg-blue-600 text-white font-semibold text-lg rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+                  >
+                    + 新規レンジを作成
+                  </button>
 
-          {/* 学習モードのコンテンツ */}
-          {appMode === 'training' && (
-            <div className="training-mode">
-              {savedRanges.length === 0 ? (
-                <div className="empty-state text-center py-12 text-gray-500">
-                  <p>学習に使用できるレンジがありません</p>
-                  <p className="text-sm mt-2">デバッグモードでレンジを作成してください</p>
-                </div>
-              ) : (
-                <TrainingSetup
-                  ranges={savedRanges}
-                  onStartTraining={handleStartTraining}
-                />
+                  {/* インポート・エクスポートボタン */}
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={handleImport}
+                      className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow"
+                    >
+                      インポート
+                    </button>
+                    <button
+                      onClick={handleExport}
+                      disabled={savedRanges.length === 0}
+                      className={`
+                        flex-1 py-3 font-semibold rounded-lg transition-colors shadow
+                        ${savedRanges.length > 0
+                          ? 'bg-gray-600 text-white hover:bg-gray-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }
+                      `}
+                    >
+                      エクスポート
+                    </button>
+                  </div>
+
+                  {/* 保存済みレンジ一覧 */}
+                  <div className="saved-ranges">
+                    <h2 className="text-2xl font-bold mb-4">保存済みレンジ</h2>
+                    
+                    {savedRanges.length === 0 ? (
+                      <div className="empty-state text-center py-12 text-gray-500">
+                        <p>まだレンジが作成されていません</p>
+                        <p className="text-sm mt-2">「新規レンジを作成」から始めましょう</p>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4">
+                        {savedRanges.map(range => (
+                          <SwipeableRangeCard
+                            key={range.id}
+                            range={range}
+                            onEdit={() => handleEditRange(range)}
+                            onDelete={() => handleDeleteRange(range.id)}
+                            onDuplicate={() => handleDuplicateRange(range)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
+
+              {/* 学習モードのコンテンツ */}
+              {appMode === 'training' && (
+                <div className="training-mode bg-white rounded-lg shadow-lg p-6">
+                  {savedRanges.length === 0 ? (
+                    <div className="empty-state text-center py-12 text-gray-500">
+                      <p>学習に使用できるレンジがありません</p>
+                      <p className="text-sm mt-2">デバッグモードでレンジを作成してください</p>
+                    </div>
+                  ) : (
+                    <TrainingSetup
+                      ranges={savedRanges}
+                      onStartTraining={handleStartTraining}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* フッター */}
+              <footer className="mt-12 text-center text-sm text-gray-500">
+                <p>{appMode === 'debug' ? 'Phase 1: カスタムレンジエディター' : 'Phase 3: 学習モード（開発中）'}</p>
+                <p className="mt-1">Powered by GTO Wizard Data</p>
+              </footer>
             </div>
           )}
 
-          {/* フッター */}
-          <footer className="mt-12 text-center text-sm text-gray-500">
-            <p>{appMode === 'debug' ? 'Phase 1: カスタムレンジエディター' : 'Phase 3: 学習モード（開発中）'}</p>
-            <p className="mt-1">Powered by GTO Wizard Data</p>
-          </footer>
-        </div>
-      ) : trainingPhase === 'setup' && showEditor ? (
-        // エディター画面
-        currentRange && (
-          <RangeEditor
-            range={currentRange}
-            onUpdate={handleUpdateRange}
-            onSave={handleSaveRange}
-          />
-        )
-      ) : null}
+          {trainingPhase === 'setup' && showEditor && currentRange && (
+            // エディター画面
+            <RangeEditor
+              range={currentRange}
+              onUpdate={handleUpdateRange}
+              onSave={handleSaveRange}
+            />
+          )}
 
-      {/* レンジ作成モーダル */}
-      {showCreationModal && (
-        <RangeCreationModal
-          onConfirm={handleConfirmCreation}
-          onCancel={handleCancelCreation}
-        />
+          {/* レンジ作成モーダル */}
+          {showCreationModal && (
+            <RangeCreationModal
+              onConfirm={handleConfirmCreation}
+              onCancel={handleCancelCreation}
+            />
+          )}
+        </>
       )}
     </div>
   );

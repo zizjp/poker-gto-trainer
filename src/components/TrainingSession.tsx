@@ -1,11 +1,11 @@
 /**
  * poker-gto-trainer - Training Session Component
- * スワイプ学習UIコンポーネント（UX改善版v2）
+ * スワイプ学習UIコンポーネント（UX改善版）
  */
 
 import { useState, useEffect } from 'react';
-import type { TrainingSettings, TrainingQuestion, FrequencyTracker, HandActionType } from '../types';
-import { swipeDirectionToAction, judgeProbabilistic } from '../utils/training';
+import type { TrainingSettings, TrainingQuestion, FrequencyTracker } from '../types';
+import { swipeDirectionToAction } from '../utils/training';
 import { handToCards, getRankDisplay } from '../utils/cards';
 
 interface TrainingSessionProps {
@@ -31,33 +31,33 @@ export function TrainingSession({
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [touchCurrent, setTouchCurrent] = useState<{ x: number; y: number } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackResult, setFeedbackResult] = useState<{ isCorrect: boolean; userAnswer: HandActionType; probability: number } | null>(null);
 
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex) / questions.length) * 100;
 
   useEffect(() => {
-    if (currentIndex >= questions.length && !showFeedback) {
+    if (currentIndex >= questions.length) {
+      // すべての問題に回答完了
       onComplete(answeredQuestions, frequencyTracker);
     }
-  }, [currentIndex, questions.length, answeredQuestions, frequencyTracker, onComplete, showFeedback]);
+  }, [currentIndex, questions.length, answeredQuestions, frequencyTracker, onComplete]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isAnimating || showFeedback) return;
+    if (isAnimating) return;
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
     setTouchCurrent({ x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart || isAnimating || showFeedback) return;
+    if (!touchStart || isAnimating) return;
     const touch = e.touches[0];
     setTouchCurrent({ x: touch.clientX, y: touch.clientY });
 
     const deltaX = touch.clientX - touchStart.x;
     const deltaY = touch.clientY - touchStart.y;
 
+    // スワイプ方向を判定
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       setSwipeDirection(deltaX > 0 ? 'right' : 'left');
     } else {
@@ -68,14 +68,9 @@ export function TrainingSession({
   const handleTouchEnd = () => {
     if (!touchStart || !touchCurrent || isAnimating) return;
 
-    if (showFeedback) {
-      handleNextQuestion();
-      return;
-    }
-
     const deltaX = touchCurrent.x - touchStart.x;
     const deltaY = touchCurrent.y - touchStart.y;
-    const threshold = 80;
+    const threshold = 80; // スワイプ判定の閾値
 
     let direction: SwipeDirection | null = null;
 
@@ -88,6 +83,7 @@ export function TrainingSession({
     if (direction) {
       handleSwipe(direction);
     } else {
+      // 閾値未満の場合はリセット
       setTouchStart(null);
       setTouchCurrent(null);
       setSwipeDirection(null);
@@ -96,45 +92,42 @@ export function TrainingSession({
 
   const handleSwipe = (direction: SwipeDirection) => {
     const userAnswer = swipeDirectionToAction(direction);
+    
+    // アニメーション開始
     setIsAnimating(true);
 
-    const { isCorrect, probability } = judgeProbabilistic(currentQuestion.correctActions, userAnswer);
-
+    // 判定処理はTrainingResultコンポーネントで実施
     const answeredQuestion: TrainingQuestion = {
       ...currentQuestion,
       userAnswer,
-      isCorrect,
-      expectedProbability: probability,
     };
 
+    // アニメーション完了後に次の問題へ
     setTimeout(() => {
       setAnsweredQuestions([...answeredQuestions, answeredQuestion]);
-      setFeedbackResult({ isCorrect, userAnswer, probability });
-      setShowFeedback(true);
-      setIsAnimating(false);
+      setCurrentIndex(currentIndex + 1);
+      
+      // リセット
       setTouchStart(null);
       setTouchCurrent(null);
       setSwipeDirection(null);
+      setIsAnimating(false);
     }, 400);
-
-    setTimeout(() => {
-      handleNextQuestion();
-    }, 1500);
   };
 
-  const handleNextQuestion = () => {
-    setShowFeedback(false);
-    setFeedbackResult(null);
-    setCurrentIndex(currentIndex + 1);
-  };
-
+  // スワイプオフセットを計算
   const getSwipeOffset = () => {
     if (!touchStart || !touchCurrent || !swipeDirection) return { x: 0, y: 0 };
-    return { x: touchCurrent.x - touchStart.x, y: touchCurrent.y - touchStart.y };
+
+    const deltaX = touchCurrent.x - touchStart.x;
+    const deltaY = touchCurrent.y - touchStart.y;
+
+    return { x: deltaX, y: deltaY };
   };
 
   const offset = getSwipeOffset();
 
+  // スワイプ方向に応じた色とラベル
   const getSwipeStyle = () => {
     if (!swipeDirection) return { bgColor: 'bg-white', label: '', labelColor: '' };
     
@@ -150,6 +143,7 @@ export function TrainingSession({
 
   const swipeStyle = getSwipeStyle();
 
+  // アニメーション用のクラス
   const getCardClass = () => {
     if (isAnimating && swipeDirection) {
       const animations: Record<SwipeDirection, string> = {
@@ -163,12 +157,16 @@ export function TrainingSession({
     return '';
   };
 
-  if (!currentQuestion) return null;
+  if (!currentQuestion) {
+    return null;
+  }
 
+  // トランプカードを取得
   const [card1, card2] = handToCards(currentQuestion.hand);
 
   return (
-    <div className="training-session fixed inset-0 bg-green-50 flex flex-col overflow-hidden touch-none">
+    <div className="training-session fixed inset-0 bg-green-50 flex flex-col overflow-hidden">
+      {/* ヘッダー */}
       <div className="bg-white shadow-md p-4 flex-shrink-0">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-2">
@@ -183,6 +181,7 @@ export function TrainingSession({
             </button>
           </div>
           
+          {/* 進捗バー */}
           <div className="flex items-center gap-3">
             <div className="flex-1 bg-gray-200 rounded-full h-2">
               <div
@@ -197,80 +196,82 @@ export function TrainingSession({
         </div>
       </div>
 
+      {/* メインコンテンツ */}
       <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-        <div className="max-w-md w-full">
-          {!showFeedback ? (
-            <div
-              className={`
-                card-container relative
-                ${getCardClass()}
-                ${swipeStyle.bgColor}
-                rounded-2xl shadow-2xl p-8
-                transition-colors duration-200
-              `}
-              style={
-                !isAnimating
-                  ? {
-                      transform: `translate(${offset.x}px, ${offset.y}px) rotate(${offset.x * 0.05}deg)`,
-                      transition: 'none',
-                    }
-                  : undefined
-              }
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              {swipeDirection && (
-                <div className="absolute top-6 left-0 right-0 flex justify-center pointer-events-none">
-                  <div className={`${swipeStyle.labelColor} text-3xl font-black opacity-70 animate-pulse`}>
-                    {swipeStyle.label}
-                  </div>
-                </div>
-              )}
+        <div className="max-w-md w-full flex flex-col" style={{ height: '500px' }}>
+          {/* カード */}
+          <div
+            className={`
+              card-container relative flex-shrink-0
+              ${getCardClass()}
+              ${swipeStyle.bgColor}
+              rounded-2xl shadow-2xl p-8
+              transition-colors duration-200
+            `}
+            style={{
+              height: '380px',
+              ...(              !isAnimating
+                ? {
+                    transform: `translate(${offset.x}px, ${offset.y}px) rotate(${offset.x * 0.05}deg)`,
+                    transition: 'none',
+                  }
+                : {})
+            }}
 
-              <div className="flex justify-center items-center gap-4 my-8">
-                <div className="bg-white rounded-xl shadow-lg p-4 w-28 h-40 flex flex-col items-center justify-center border-2 border-gray-300">
-                  <div className={`text-6xl font-bold ${card1.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
-                    {getRankDisplay(card1.rank)}
-                  </div>
-                  <div className={`text-7xl ${card1.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
-                    {card1.suit}
-                  </div>
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* スワイプラベル */}
+            {swipeDirection && (
+              <div className="absolute top-6 left-0 right-0 flex justify-center pointer-events-none">
+                <div className={`
+                  ${swipeStyle.labelColor} 
+                  text-3xl font-black opacity-70 
+                  animate-pulse
+                `}>
+                  {swipeStyle.label}
                 </div>
+              </div>
+            )}
 
-                <div className="bg-white rounded-xl shadow-lg p-4 w-28 h-40 flex flex-col items-center justify-center border-2 border-gray-300">
-                  <div className={`text-6xl font-bold ${card2.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
-                    {getRankDisplay(card2.rank)}
-                  </div>
-                  <div className={`text-7xl ${card2.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
-                    {card2.suit}
-                  </div>
+            {/* トランプカード表示 */}
+            <div className="flex justify-center items-center gap-4 my-12">
+              {/* カード1 */}
+              <div className="bg-white rounded-xl shadow-lg p-6 w-32 h-44 flex flex-col items-center justify-between border-2 border-gray-200">
+                <div className={`text-5xl font-bold ${card1.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {getRankDisplay(card1.rank)}
+                </div>
+                <div className={`text-6xl ${card1.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {card1.suit}
+                </div>
+                <div className={`text-5xl font-bold ${card1.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {getRankDisplay(card1.rank)}
                 </div>
               </div>
 
-              <div className="text-center text-gray-600 text-sm font-semibold mt-4">
-                {currentQuestion.hand}
+              {/* カード2 */}
+              <div className="bg-white rounded-xl shadow-lg p-6 w-32 h-44 flex flex-col items-center justify-between border-2 border-gray-200">
+                <div className={`text-5xl font-bold ${card2.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {getRankDisplay(card2.rank)}
+                </div>
+                <div className={`text-6xl ${card2.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {card2.suit}
+                </div>
+                <div className={`text-5xl font-bold ${card2.color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
+                  {getRankDisplay(card2.rank)}
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="feedback-screen bg-white rounded-2xl shadow-2xl p-8 text-center"
-              onTouchEnd={handleNextQuestion}>
-              <div className={`text-8xl mb-4 ${feedbackResult?.isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-                {feedbackResult?.isCorrect ? '○' : '×'}
-              </div>
-              <div className="text-2xl font-bold mb-2">
-                {feedbackResult?.isCorrect ? '正解！' : '不正解'}
-              </div>
-              <div className="text-gray-600 text-sm">
-                確率: {Math.round((feedbackResult?.probability || 0) * 100)}%
-              </div>
-              <div className="text-gray-400 text-xs mt-4">
-                タップで次へ
-              </div>
-            </div>
-          )}
 
-          <div className="mt-6 grid grid-cols-2 gap-3 text-center text-sm select-none">
+            {/* ハンド表記 */}
+            <div className="text-center text-gray-600 text-sm font-semibold mt-4">
+              {currentQuestion.hand}
+            </div>
+          </div>
+
+          {/* 操作ガイド */}
+          <div className="mt-6 grid grid-cols-2 gap-3 text-center text-sm select-none flex-shrink-0">
             <div className="bg-white rounded-lg p-3 shadow">
               <div className="text-2xl mb-1">↑</div>
               <div className="font-semibold text-red-600">Raise</div>
@@ -291,27 +292,67 @@ export function TrainingSession({
         </div>
       </div>
 
+      {/* スタイル定義 */}
       <style>{`
         @keyframes swipe-up {
-          0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-          100% { transform: translate(0, -150%) rotate(-10deg); opacity: 0; }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(0, -150%) rotate(-10deg);
+            opacity: 0;
+          }
         }
+
         @keyframes swipe-down {
-          0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-          100% { transform: translate(0, 150%) rotate(10deg); opacity: 0; }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(0, 150%) rotate(10deg);
+            opacity: 0;
+          }
         }
+
         @keyframes swipe-left {
-          0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-          100% { transform: translate(-150%, 0) rotate(-20deg); opacity: 0; }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-150%, 0) rotate(-20deg);
+            opacity: 0;
+          }
         }
+
         @keyframes swipe-right {
-          0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-          100% { transform: translate(150%, 0) rotate(20deg); opacity: 0; }
+          0% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(150%, 0) rotate(20deg);
+            opacity: 0;
+          }
         }
-        .animate-swipe-up { animation: swipe-up 0.4s ease-out forwards; }
-        .animate-swipe-down { animation: swipe-down 0.4s ease-out forwards; }
-        .animate-swipe-left { animation: swipe-left 0.4s ease-out forwards; }
-        .animate-swipe-right { animation: swipe-right 0.4s ease-out forwards; }
+
+        .animate-swipe-up {
+          animation: swipe-up 0.4s ease-out forwards;
+        }
+
+        .animate-swipe-down {
+          animation: swipe-down 0.4s ease-out forwards;
+        }
+
+        .animate-swipe-left {
+          animation: swipe-left 0.4s ease-out forwards;
+        }
+
+        .animate-swipe-right {
+          animation: swipe-right 0.4s ease-out forwards;
+        }
       `}</style>
     </div>
   );

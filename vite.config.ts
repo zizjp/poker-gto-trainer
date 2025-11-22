@@ -9,4 +9,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
+  publicDir: 'public', // PWAファイルを含むpublicディレクトリを確実にコピー
 })
