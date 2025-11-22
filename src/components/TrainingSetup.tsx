@@ -33,7 +33,7 @@ export function TrainingSetup({ ranges, onStartTraining }: TrainingSetupProps) {
   };
 
   return (
-    <div className="training-setup max-w-2xl mx-auto">
+    <div className="training-setup max-w-md mx-auto px-4">
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">学習設定</h2>
 
@@ -142,7 +142,7 @@ export function TrainingSetup({ ranges, onStartTraining }: TrainingSetupProps) {
       </div>
 
       {/* 説明 */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 overflow-x-hidden">
         <h3 className="font-semibold text-blue-900 mb-2">📚 学習のヒント</h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• スワイプ操作：上（Raise）、下（Fold）、左（Call）、右（Allin）</li>
