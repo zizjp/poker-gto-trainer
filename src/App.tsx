@@ -10,6 +10,7 @@ import { SwipeableRangeCard } from './components/SwipeableRangeCard';
 import { TrainingSetup } from './components/TrainingSetup';
 import { TrainingSession } from './components/TrainingSession';
 import { TrainingResultComponent } from './components/TrainingResult';
+import { Statistics } from './components/Statistics';
 import type { 
   CustomRange, 
   Hand, 
@@ -23,6 +24,7 @@ import type {
 import { generateAllHands } from './utils/hands';
 import { createEmptyHandAction } from './utils/validation';
 import { saveCustomRange, loadAllCustomRanges, deleteCustomRange, exportAllData, importData } from './utils/storage';
+import { saveTrainingHistory } from './utils/history';
 import { 
   generateQuestions, 
   judgeProbabilistic, 
@@ -45,6 +47,7 @@ function App() {
   const [trainingResult, setTrainingResult] = useState<TrainingResult | null>(null);
   const [frequencyTracker, setFrequencyTracker] = useState<FrequencyTracker | null>(null);
   const [trainingPhase, setTrainingPhase] = useState<'setup' | 'session' | 'result'>('setup');
+  const [showStatistics, setShowStatistics] = useState(false);
 
   // 初期化: 保存されたレンジを読み込み
   useEffect(() => {
@@ -176,13 +179,12 @@ function App() {
   ) => {
     if (!trainingSettings) return;
 
-    // 判定処理（既にTrainingSessionで判定済み）
+    // 判定処理
     const judgedQuestions = answeredQuestions.map((q) => {
       if (!q.userAnswer) return q;
 
       if (trainingSettings.judgmentMode === 'probabilistic') {
-        // 確率的判定（既に完了している場合はスキップ）
-        if (q.isCorrect !== undefined) return q;
+        // 確率的判定
         const { isCorrect, probability } = judgeProbabilistic(
           q.correctActions,
           q.userAnswer
@@ -208,6 +210,9 @@ function App() {
 
     setTrainingResult(result);
     setTrainingPhase('result');
+    
+    // 学習履歴を保存
+    saveTrainingHistory(result);
   };
 
   // 学習をキャンセル
@@ -225,25 +230,6 @@ function App() {
     handleStartTraining(trainingSettings);
   };
 
-  // 復習モード開始
-  const handleReviewMode = () => {
-    if (!trainingResult || !trainingSettings) return;
-    const incorrectHands = trainingResult.questions.filter(q => !q.isCorrect).map(q => q.hand);
-    if (incorrectHands.length === 0) return;
-
-    const range = savedRanges.find(r => r.id === trainingSettings.rangeId);
-    if (!range) return;
-
-    // 不正解ハンドのみで問題生成
-    const reviewQuestions: TrainingQuestion[] = incorrectHands.map(hand => ({
-      hand,
-      correctActions: range.hands[hand],
-    }));
-
-    setTrainingQuestions(reviewQuestions);
-    setTrainingPhase('session');
-  };
-
   // ホームに戻る
   const handleBackToHome = () => {
     setTrainingPhase('setup');
@@ -251,6 +237,16 @@ function App() {
     setTrainingQuestions([]);
     setTrainingResult(null);
     setFrequencyTracker(null);
+  };
+
+  // 統計画面を表示
+  const handleShowStatistics = () => {
+    setShowStatistics(true);
+  };
+
+  // 統計画面を閉じる
+  const handleCloseStatistics = () => {
+    setShowStatistics(false);
   };
 
   // インポート
@@ -281,6 +277,11 @@ function App() {
 
   return (
     <div className={`app min-h-screen ${appMode === 'debug' ? 'bg-gray-50' : 'bg-green-50'}`}>
+      {/* 統計画面 */}
+      {showStatistics && (
+        <Statistics onClose={handleCloseStatistics} />
+      )}
+
       {/* 学習セッション画面 */}
       {trainingPhase === 'session' && trainingSettings && trainingQuestions.length > 0 && (
         <TrainingSession
@@ -297,7 +298,6 @@ function App() {
         <TrainingResultComponent
           result={trainingResult}
           onRestart={handleTrainingRestart}
-          onReview={handleReviewMode}
           onBackToHome={handleBackToHome}
         />
       )}
@@ -338,6 +338,12 @@ function App() {
               `}
             >
               学習モード
+            </button>
+            <button
+              onClick={handleShowStatistics}
+              className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg transition-all shadow hover:bg-purple-700"
+            >
+              統計を見る
             </button>
           </div>
 

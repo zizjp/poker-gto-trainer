@@ -9,7 +9,7 @@ import { getActionLabel } from '../utils/training';
 interface TrainingResultProps {
   result: TrainingResult;
   onRestart: () => void;
-  onReview: () => void;
+  onReview?: () => void;
   onBackToHome: () => void;
 }
 

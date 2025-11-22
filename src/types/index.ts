@@ -159,6 +159,39 @@ export interface LearningSession {
 }
 
 /**
+ * 学習履歴レコード
+ */
+export interface TrainingHistoryRecord {
+  id: string;
+  result: TrainingResult;
+  timestamp: string;
+}
+
+/**
+ * ハンド別統計
+ */
+export interface HandStats {
+  hand: Hand;
+  totalAttempts: number;
+  correctCount: number;
+  accuracy: number;
+  lastAttempt: string;
+}
+
+/**
+ * レンジ別統計
+ */
+export interface RangeStats {
+  rangeId: string;
+  rangeName: string;
+  totalSessions: number;
+  averageScore: number;
+  bestScore: number;
+  totalQuestions: number;
+  lastPlayed: string;
+}
+
+/**
  * ストレージキー
  */
 export const StorageKey = {
@@ -167,4 +200,5 @@ export const StorageKey = {
   USER_PREFERENCES: 'poker-gto-trainer:user-preferences',
   APP_MODE: 'poker-gto-trainer:app-mode',
   TRAINING_SETTINGS: 'poker-gto-trainer:training-settings',
+  TRAINING_HISTORY: 'poker-gto-trainer:training-history',
 } as const;
