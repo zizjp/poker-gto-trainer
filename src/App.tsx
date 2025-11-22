@@ -176,12 +176,13 @@ function App() {
   ) => {
     if (!trainingSettings) return;
 
-    // 判定処理
+    // 判定処理（既にTrainingSessionで判定済み）
     const judgedQuestions = answeredQuestions.map((q) => {
       if (!q.userAnswer) return q;
 
       if (trainingSettings.judgmentMode === 'probabilistic') {
-        // 確率的判定
+        // 確率的判定（既に完了している場合はスキップ）
+        if (q.isCorrect !== undefined) return q;
         const { isCorrect, probability } = judgeProbabilistic(
           q.correctActions,
           q.userAnswer
@@ -222,6 +223,25 @@ function App() {
   const handleTrainingRestart = () => {
     if (!trainingSettings) return;
     handleStartTraining(trainingSettings);
+  };
+
+  // 復習モード開始
+  const handleReviewMode = () => {
+    if (!trainingResult || !trainingSettings) return;
+    const incorrectHands = trainingResult.questions.filter(q => !q.isCorrect).map(q => q.hand);
+    if (incorrectHands.length === 0) return;
+
+    const range = savedRanges.find(r => r.id === trainingSettings.rangeId);
+    if (!range) return;
+
+    // 不正解ハンドのみで問題生成
+    const reviewQuestions: TrainingQuestion[] = incorrectHands.map(hand => ({
+      hand,
+      correctActions: range.hands[hand],
+    }));
+
+    setTrainingQuestions(reviewQuestions);
+    setTrainingPhase('session');
   };
 
   // ホームに戻る
@@ -277,6 +297,7 @@ function App() {
         <TrainingResultComponent
           result={trainingResult}
           onRestart={handleTrainingRestart}
+          onReview={handleReviewMode}
           onBackToHome={handleBackToHome}
         />
       )}
