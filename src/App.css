@@ -1,0 +1,30 @@
+/* poker-gto-trainer - Global Styles */
+
+.app {
+  min-height: 100vh;
+}
+
+.range-card {
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.range-card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+}
+
+.range-card:active {
+  transform: translateY(0);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .home-screen {
+    padding: 1rem;
+  }
+  
+  .range-card {
+    padding: 1rem;
+  }
+}
